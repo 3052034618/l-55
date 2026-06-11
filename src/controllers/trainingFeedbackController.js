@@ -18,21 +18,20 @@ const createFeedback = asyncHandler(async (req, res) => {
     throw new AppError('该训练已有反馈记录', 400, 'FEEDBACK_ALREADY_EXISTS');
   }
 
-  const overtrainingRisk = await assessOvertrainingRisk(studentId);
-
-  const feedback = new TrainingFeedback({
-    ...req.body,
-    overtrainingRisk: {
-      level: overtrainingRisk.level,
-      factors: overtrainingRisk.factors,
-      recommendation: overtrainingRisk.recommendations?.[0] || ''
-    }
-  });
-
+  const feedback = new TrainingFeedback(req.body);
   await feedback.save();
 
   session.feedbackId = feedback._id;
   await session.save();
+
+  const overtrainingRisk = await assessOvertrainingRisk(studentId);
+
+  feedback.overtrainingRisk = {
+    level: overtrainingRisk.level,
+    factors: overtrainingRisk.factors,
+    recommendation: overtrainingRisk.recommendations?.[0] || ''
+  };
+  await feedback.save();
 
   const student = await Student.findById(studentId);
   if (student) {

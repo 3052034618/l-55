@@ -21,11 +21,28 @@ const createTrainingPlan = asyncHandler(async (req, res) => {
 });
 
 const generateWeeklyTrainingPlan = asyncHandler(async (req, res) => {
-  const { studentId, coachId, goalType, intensity, sessionsPerWeek, sessionDuration, startDate } = req.body;
+  const { studentId, coachId, intensity, sessionsPerWeek, sessionDuration, startDate } = req.body;
+  let { goalType } = req.body;
 
   const student = await Student.findById(studentId);
   if (!student) {
     throw new AppError('学员不存在', 404, 'STUDENT_NOT_FOUND');
+  }
+
+  if (!goalType && student.trainingGoals && student.trainingGoals.length > 0) {
+    const supportedGoals = ['strength', 'endurance', 'fat_loss', 'muscle_gain', 'rehabilitation', 'comprehensive', 'weight_loss', 'flexibility'];
+    const priorityGoal = student.trainingGoals.find(g => g.priority === 'high') || student.trainingGoals[0];
+    if (priorityGoal && supportedGoals.includes(priorityGoal.type)) {
+      goalType = priorityGoal.type;
+    } else if (priorityGoal && priorityGoal.type === 'weight_loss') {
+      goalType = 'fat_loss';
+    } else if (priorityGoal && priorityGoal.type === 'flexibility') {
+      goalType = 'rehabilitation';
+    }
+  }
+
+  if (!goalType) {
+    goalType = 'comprehensive';
   }
 
   const planData = await generateWeeklyPlan(student, {
@@ -54,7 +71,7 @@ const generateWeeklyTrainingPlan = asyncHandler(async (req, res) => {
     coachId,
     name: `${student.name} - ${start.format('YYYY年MM月DD日')}周计划`,
     type: 'weekly',
-    goalType: goalType || 'comprehensive',
+    goalType: goalType,
     startDate: start.toDate(),
     endDate: end.toDate(),
     status: 'draft',

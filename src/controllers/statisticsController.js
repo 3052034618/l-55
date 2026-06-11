@@ -138,8 +138,8 @@ const getMonthlyReport = asyncHandler(async (req, res) => {
   }
 
   const targetYear = parseInt(year) || dayjs().year();
-  const targetMonth = parseInt(month) !== undefined && parseInt(month) !== null
-    ? parseInt(month)
+  const targetMonth = (month !== undefined && month !== null && month !== '')
+    ? parseInt(month) - 1
     : dayjs().month();
 
   const monthStart = dayjs().year(targetYear).month(targetMonth).startOf('month').toDate();
@@ -180,7 +180,11 @@ const getMonthlyReport = asyncHandler(async (req, res) => {
     : 0;
 
   const avgSleepQuality = feedbacks.length > 0
-    ? feedbacks.reduce((sum, f) => sum + (f.sleepQuality || 0), 0) / feedbacks.filter(f => f.sleepQuality).length || 0
+    ? (() => {
+        const withSleep = feedbacks.filter(f => f.sleepQuality !== undefined && f.sleepQuality !== null && f.sleepQuality > 0);
+        if (withSleep.length === 0) return 0;
+        return withSleep.reduce((sum, f) => sum + f.sleepQuality, 0) / withSleep.length;
+      })()
     : 0;
 
   const avgSoreness = feedbacks.length > 0

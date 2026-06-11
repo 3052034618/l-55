@@ -114,25 +114,25 @@ const getStudentAssessmentTrend = asyncHandler(async (req, res) => {
     .limit(parseInt(limit))
     .select('date overallScore strengthScore enduranceScore flexibilityScore bodyCompositionScore type');
 
-  const reversed = assessments.reverse();
+  const chronological = [...assessments].reverse();
 
   const trend = {
-    dates: reversed.map(a => a.date),
-    overallScores: reversed.map(a => a.overallScore),
-    strengthScores: reversed.map(a => a.strengthScore),
-    enduranceScores: reversed.map(a => a.enduranceScore),
-    flexibilityScores: reversed.map(a => a.flexibilityScore)
+    dates: chronological.map(a => a.date),
+    overallScores: chronological.map(a => a.overallScore),
+    strengthScores: chronological.map(a => a.strengthScore),
+    enduranceScores: chronological.map(a => a.enduranceScore),
+    flexibilityScores: chronological.map(a => a.flexibilityScore)
   };
 
   let improvement = null;
   if (assessments.length >= 2) {
-    const first = assessments[assessments.length - 1];
-    const last = assessments[0];
+    const earliest = assessments[assessments.length - 1];
+    const latest = assessments[0];
     improvement = {
-      overall: last.overallScore - first.overallScore,
-      strength: (last.strengthScore || 0) - (first.strengthScore || 0),
-      endurance: (last.enduranceScore || 0) - (first.enduranceScore || 0),
-      flexibility: (last.flexibilityScore || 0) - (first.flexibilityScore || 0)
+      overall: (latest.overallScore || 0) - (earliest.overallScore || 0),
+      strength: (latest.strengthScore || 0) - (earliest.strengthScore || 0),
+      endurance: (latest.enduranceScore || 0) - (earliest.enduranceScore || 0),
+      flexibility: (latest.flexibilityScore || 0) - (earliest.flexibilityScore || 0)
     };
   }
 
