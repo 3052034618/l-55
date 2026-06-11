@@ -4,12 +4,13 @@ const trainingFeedbackController = require('../controllers/trainingFeedbackContr
 
 router.post('/', trainingFeedbackController.createFeedback);
 router.get('/', trainingFeedbackController.getFeedbacks);
-router.get('/:id', trainingFeedbackController.getFeedbackById);
-router.put('/:id', trainingFeedbackController.updateFeedback);
-router.delete('/:id', trainingFeedbackController.deleteFeedback);
 
 router.get('/student/:studentId/fatigue-trend', trainingFeedbackController.getStudentFatigueTrend);
 router.get('/student/:studentId/overtraining-risk', trainingFeedbackController.getOvertrainingRisk);
+
+router.get('/:id', trainingFeedbackController.getFeedbackById);
+router.put('/:id', trainingFeedbackController.updateFeedback);
+router.delete('/:id', trainingFeedbackController.deleteFeedback);
 router.put('/:id/coach-comment', trainingFeedbackController.addCoachComment);
 
 module.exports = router;

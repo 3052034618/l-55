@@ -46,7 +46,14 @@ const createFeedback = asyncHandler(async (req, res) => {
 
   successResponse(res, {
     feedback,
-    overtrainingRisk
+    overtrainingRisk: {
+      level: overtrainingRisk.level,
+      score: overtrainingRisk.score,
+      factors: overtrainingRisk.factors,
+      dimensions: overtrainingRisk.dimensions,
+      recommendations: overtrainingRisk.recommendations,
+      sessionAdvice: overtrainingRisk.sessionAdvice
+    }
   }, '训练反馈提交成功', 201);
 });
 
@@ -163,7 +170,15 @@ const getOvertrainingRisk = asyncHandler(async (req, res) => {
     await student.save();
   }
 
-  successResponse(res, risk, '获取过度训练风险评估成功');
+  successResponse(res, {
+    level: risk.level,
+    score: risk.score,
+    factors: risk.factors,
+    dimensions: risk.dimensions,
+    recommendations: risk.recommendations,
+    sessionAdvice: risk.sessionAdvice,
+    lastAssessed: risk.lastAssessed
+  }, '获取过度训练风险评估成功');
 });
 
 const addCoachComment = asyncHandler(async (req, res) => {

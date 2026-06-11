@@ -216,6 +216,11 @@ const startSession = asyncHandler(async (req, res) => {
 const getNextSession = asyncHandler(async (req, res) => {
   const { studentId } = req.params;
 
+  const student = await Student.findById(studentId);
+  if (!student) {
+    throw new AppError('学员不存在', 404, 'STUDENT_NOT_FOUND');
+  }
+
   const nextSession = await TrainingSession.findOne({
     studentId,
     status: { $in: ['scheduled', 'in_progress'] }
@@ -224,19 +229,42 @@ const getNextSession = asyncHandler(async (req, res) => {
     .populate('planId');
 
   if (!nextSession) {
-    return successResponse(res, null, '暂无待进行的训练');
+    return successResponse(res, {
+      hasNextSession: false,
+      message: '暂无待进行的训练'
+    }, '暂无待进行的训练');
   }
 
   const overtrainingRisk = await assessOvertrainingRisk(studentId);
 
+  const sessionAdvice = overtrainingRisk.sessionAdvice || {};
+
+  let adjustedSession = nextSession;
+  if (sessionAdvice.shouldReduceIntensity && sessionAdvice.suggestedIntensity && nextSession.status === 'scheduled') {
+    const adjusted = adjustSessionIntensity(nextSession.toObject(), sessionAdvice.suggestedIntensity);
+    adjustedSession = {
+      ...nextSession.toObject(),
+      _originalIntensity: nextSession.intensity,
+      _suggestedIntensity: sessionAdvice.suggestedIntensity,
+      exercises: adjusted.exercises
+    };
+  }
+
   successResponse(res, {
-    session: nextSession,
-    overtrainingRisk,
-    reminder: generateSessionReminder(nextSession, overtrainingRisk)
+    hasNextSession: true,
+    session: adjustedSession,
+    overtrainingRisk: {
+      level: overtrainingRisk.level,
+      score: overtrainingRisk.score,
+      factors: overtrainingRisk.factors,
+      dimensions: overtrainingRisk.dimensions
+    },
+    sessionAdvice,
+    reminder: generateSessionReminder(nextSession, overtrainingRisk, sessionAdvice)
   }, '获取下次训练成功');
 });
 
-const generateSessionReminder = (session, risk) => {
+const generateSessionReminder = (session, risk, advice) => {
   const reminders = [];
 
   reminders.push(`下次训练：${session.title}`);
@@ -247,7 +275,20 @@ const generateSessionReminder = (session, risk) => {
     reminders.push(`主要动作：${exerciseNames}${session.exercises.length > 3 ? '...' : ''}`);
   }
 
-  if (risk && risk.level === 'high') {
+  if (advice) {
+    if (advice.suggestedAction === 'rest') {
+      reminders.push(`⚠️ ${advice.reason}`);
+      if (advice.suggestedIntensity) {
+        reminders.push(`如仍需训练，建议将强度降至「低」，以恢复性训练为主`);
+      }
+    } else if (advice.suggestedAction === 'reduce') {
+      reminders.push(`💡 ${advice.reason}`);
+      if (advice.suggestedIntensity) {
+        const intensityNames = { low: '低', medium: '中', high: '高' };
+        reminders.push(`建议训练强度调整为「${intensityNames[advice.suggestedIntensity] || advice.suggestedIntensity}」`);
+      }
+    }
+  } else if (risk && risk.level === 'high') {
     reminders.push('⚠️ 注意：当前过度训练风险较高，建议降低强度或安排休息');
   } else if (risk && risk.level === 'medium') {
     reminders.push('💡 提示：注意身体信号，适度调整训练强度');

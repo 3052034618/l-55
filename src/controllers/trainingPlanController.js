@@ -37,6 +37,15 @@ const generateWeeklyTrainingPlan = asyncHandler(async (req, res) => {
     availableDays: student.availableDays
   });
 
+  if (!planData.canGenerate) {
+    return successResponse(res, {
+      canGenerate: false,
+      reason: planData.reason,
+      plan: null,
+      sessions: []
+    }, planData.reason, 200);
+  }
+
   const start = dayjs(startDate || dayjs().startOf('week').toDate());
   const end = start.add(6, 'day');
 
@@ -85,6 +94,7 @@ const generateWeeklyTrainingPlan = asyncHandler(async (req, res) => {
   }
 
   successResponse(res, {
+    canGenerate: true,
     plan,
     sessions
   }, '周训练计划生成成功', 201);
