@@ -1,0 +1,33 @@
+{
+  "name": "smart-training-plan-backend",
+  "version": "1.0.0",
+  "description": "智慧体育训练计划后端服务 - 为俱乐部教练系统提供会员训练计划生成与管理能力",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "seed": "node src/scripts/seed.js"
+  },
+  "keywords": [
+    "sports",
+    "training",
+    "fitness",
+    "backend",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "morgan": "^1.10.0",
+    "dayjs": "^1.11.9",
+    "uuid": "^9.0.0",
+    "joi": "^17.9.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
